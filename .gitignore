@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.safetensors
+*.bin
+*.gguf
+models/
+data/raw/
+data/processed/
+*.db
+*.log
+.DS_Store
+.vscode/
+htmlcov/
+.coverage
