@@ -20,7 +20,8 @@ from src.finlens.api.database import Extraction, async_session, init_db
 from src.finlens.api.models import ExtractionRequest, ExtractionResponse, HealthResponse
 from src.finlens.guardrails.pipeline import run_guardrails
 from fastapi.middleware.cors import CORSMiddleware
-
+from src.finlens.monitoring.metrics import track_request, metrics_app
+from src.finlens.monitoring.tracing import tracer
 
 app = FastAPI(
     title="FinLens API",
@@ -30,10 +31,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/metrics", metrics_app)
 
 # ── Startup ──
 
@@ -87,57 +90,73 @@ async def mock_inference(filing_text: str) -> str:
 @app.post("/extract", response_model=ExtractionResponse)
 async def extract(request: ExtractionRequest):
     """Extract structured data from SEC filing text."""
-    start = time.time()
+    with tracer.start_as_current_span("extract_request") as span:
+        start = time.time()
 
-    # Run inference (mock for now)
-    output_text = await mock_inference(request.filing_text)
+        # Run inference
+        with tracer.start_as_current_span("inference"):
+            output_text = await mock_inference(request.filing_text)
 
-    latency_ms = (time.time() - start) * 1000
+        latency_ms = (time.time() - start) * 1000
 
-    # Run guardrails
-    guardrail_result = run_guardrails(
-        input_text=request.filing_text,
-        output_text=output_text,
-    )
+        # Run guardrails
+        with tracer.start_as_current_span("guardrails"):
+            guardrail_result = run_guardrails(
+                input_text=request.filing_text,
+                output_text=output_text,
+            )
 
-    # Determine status
-    if guardrail_result.passed:
-        status = "success"
-    elif "hallucination" in guardrail_result.failures:
-        status = "flagged"  # needs human review
-    else:
-        status = "failed"
+        # Determine status
+        if guardrail_result.passed:
+            status = "success"
+        elif "hallucination" in guardrail_result.failures:
+            status = "flagged"
+        else:
+            status = "failed"
 
-    # Store in database
-    parsed = guardrail_result.parsed_output or {}
-    record = Extraction(
-        input_text=request.filing_text,
-        input_length=len(request.filing_text),
-        output_json=output_text,
-        company_name=parsed.get("company_name"),
-        num_risks=len(parsed.get("risk_factors", [])),
-        num_events=len(parsed.get("material_events", [])),
-        num_obligations=len(parsed.get("financial_obligations", [])),
-        guardrails_passed=guardrail_result.passed,
-        guardrail_failures=", ".join(guardrail_result.failures) if guardrail_result.failures else None,
-        latency_ms=latency_ms,
-        status=status,
-    )
+        span.set_attribute("status", status)
+        span.set_attribute("latency_ms", latency_ms)
 
-    async with async_session() as session:
-        session.add(record)
-        await session.commit()
-        await session.refresh(record)
+        # Store in database
+        with tracer.start_as_current_span("database"):
+            parsed = guardrail_result.parsed_output or {}
+            num_items = (
+                len(parsed.get("risk_factors", []))
+                + len(parsed.get("material_events", []))
+                + len(parsed.get("financial_obligations", []))
+            )
 
-    return ExtractionResponse(
-        status=status,
-        extraction=guardrail_result.parsed_output,
-        guardrails_passed=guardrail_result.passed,
-        guardrail_failures=guardrail_result.failures,
-        latency_ms=round(latency_ms, 1),
-        request_id=record.id,
-    )
+            record = Extraction(
+                input_text=request.filing_text,
+                input_length=len(request.filing_text),
+                output_json=output_text,
+                company_name=parsed.get("company_name"),
+                num_risks=len(parsed.get("risk_factors", [])),
+                num_events=len(parsed.get("material_events", [])),
+                num_obligations=len(parsed.get("financial_obligations", [])),
+                guardrails_passed=guardrail_result.passed,
+                guardrail_failures=", ".join(guardrail_result.failures) if guardrail_result.failures else None,
+                latency_ms=latency_ms,
+                status=status,
+            )
 
+            async with async_session() as session:
+                session.add(record)
+                await session.commit()
+                await session.refresh(record)
+
+        # Track metrics
+        track_request(status, latency_ms, num_items, guardrail_result.failures)
+
+        return ExtractionResponse(
+            status=status,
+            extraction=guardrail_result.parsed_output,
+            guardrails_passed=guardrail_result.passed,
+            guardrail_failures=guardrail_result.failures,
+            latency_ms=round(latency_ms, 1),
+            request_id=record.id,
+        )
+    
 
 @app.get("/health", response_model=HealthResponse)
 async def health():

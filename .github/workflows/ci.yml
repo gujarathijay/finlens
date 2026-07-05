@@ -1,0 +1,82 @@
+name: FinLens CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Lint
+        run: uv run ruff check src/ tests/
+
+      - name: Format check
+        run: uv run ruff format --check src/ tests/
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run tests
+        run: uv run pytest tests/ -v
+
+  eval-gate:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run eval baseline
+        run: |
+          uv run python -m src.finlens.evaluation.eval --val-baseline data/val.jsonl
+
+      - name: Check guardrails pass
+        run: |
+          uv run python -c "
+          import json
+          from src.finlens.guardrails.pipeline import run_guardrails
+
+          passed = 0
+          total = 0
+          with open('data/val.jsonl') as f:
+              for line in f:
+                  total += 1
+                  ex = json.loads(line)
+                  result = run_guardrails(ex['input_text'], json.dumps(ex['expected_output']))
+                  if result.passed:
+                      passed += 1
+
+          rate = passed / total
+          print(f'Guardrail pass rate: {passed}/{total} ({rate:.0%})')
+
+          if rate < 0.90:
+              print('FAIL: Guardrail pass rate below 90% threshold')
+              exit(1)
+          else:
+              print('PASS: Guardrail gate cleared')
+          "
