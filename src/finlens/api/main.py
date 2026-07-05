@@ -14,7 +14,8 @@ Usage:
     INFERENCE_MODE=local uv run uvicorn src.finlens.api.main:app --port 8080
 
     # vLLM mode (GPU server):
-    INFERENCE_MODE=vllm VLLM_URL=http://vllm:8000 uv run uvicorn src.finlens.api.main:app --port 8080
+    INFERENCE_MODE=vllm VLLM_URL=http://vllm:8000 \
+        uv run uvicorn src.finlens.api.main:app --port 8080
 """
 
 import json
@@ -66,6 +67,7 @@ _local_tokenizer = None
 
 # ── Startup ──
 
+
 @app.on_event("startup")
 async def startup():
     await init_db()
@@ -100,6 +102,7 @@ def _load_local_model():
 
 
 # ── Inference ──
+
 
 async def run_inference(filing_text: str) -> str:
     """Run inference in the configured mode."""
@@ -145,48 +148,51 @@ def _local_inference(messages: list[dict]) -> str:
         )
 
     # Decode only the new tokens (skip the prompt)
-    new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
+    new_tokens = outputs[0][inputs["input_ids"].shape[1] :]
     return _local_tokenizer.decode(new_tokens, skip_special_tokens=True)
 
 
 def _mock_inference() -> str:
     """Return fake data for development."""
-    return json.dumps({
-        "company_name": "Mock Corp",
-        "filing_type": "10-K",
-        "fiscal_year": "2024",
-        "risk_factors": [
-            {
-                "factor": "Regulatory compliance risk",
-                "category": "regulatory",
-                "severity": "high",
-                "evidence": "subject to various regulatory requirements",
-            }
-        ],
-        "material_events": [
-            {
-                "event": "Acquisition completed",
-                "date": "2024-06-15",
-                "impact": "positive",
-                "details": "Acquired subsidiary for strategic expansion",
-            }
-        ],
-        "financial_obligations": [
-            {
-                "obligation": "Long-term debt maturity",
-                "amount": "$500M",
-                "deadline": "2026-12-31",
-                "category": "debt",
-            }
-        ],
-        "summary": (
-            "Mock Corp faces regulatory risks while completing "
-            "strategic acquisitions funded by long-term debt."
-        ),
-    })
+    return json.dumps(
+        {
+            "company_name": "Mock Corp",
+            "filing_type": "10-K",
+            "fiscal_year": "2024",
+            "risk_factors": [
+                {
+                    "factor": "Regulatory compliance risk",
+                    "category": "regulatory",
+                    "severity": "high",
+                    "evidence": "subject to various regulatory requirements",
+                }
+            ],
+            "material_events": [
+                {
+                    "event": "Acquisition completed",
+                    "date": "2024-06-15",
+                    "impact": "positive",
+                    "details": "Acquired subsidiary for strategic expansion",
+                }
+            ],
+            "financial_obligations": [
+                {
+                    "obligation": "Long-term debt maturity",
+                    "amount": "$500M",
+                    "deadline": "2026-12-31",
+                    "category": "debt",
+                }
+            ],
+            "summary": (
+                "Mock Corp faces regulatory risks while completing "
+                "strategic acquisitions funded by long-term debt."
+            ),
+        }
+    )
 
 
 # ── Endpoints ──
+
 
 @app.post("/extract", response_model=ExtractionResponse)
 async def extract(request: ExtractionRequest):
@@ -230,14 +236,10 @@ async def extract(request: ExtractionRequest):
                 company_name=parsed.get("company_name"),
                 num_risks=len(parsed.get("risk_factors", [])),
                 num_events=len(parsed.get("material_events", [])),
-                num_obligations=len(
-                    parsed.get("financial_obligations", [])
-                ),
+                num_obligations=len(parsed.get("financial_obligations", [])),
                 guardrails_passed=guardrail_result.passed,
                 guardrail_failures=(
-                    ", ".join(guardrail_result.failures)
-                    if guardrail_result.failures
-                    else None
+                    ", ".join(guardrail_result.failures) if guardrail_result.failures else None
                 ),
                 latency_ms=latency_ms,
                 status=status,
@@ -248,9 +250,7 @@ async def extract(request: ExtractionRequest):
                 await session.commit()
                 await session.refresh(record)
 
-        track_request(
-            status, latency_ms, num_items, guardrail_result.failures
-        )
+        track_request(status, latency_ms, num_items, guardrail_result.failures)
 
         return ExtractionResponse(
             status=status,
@@ -276,9 +276,7 @@ async def health():
 async def history(limit: int = 10):
     """Get recent extractions."""
     async with async_session() as session:
-        query = (
-            select(Extraction).order_by(Extraction.id.desc()).limit(limit)
-        )
+        query = select(Extraction).order_by(Extraction.id.desc()).limit(limit)
         result = await session.execute(query)
         records = result.scalars().all()
 
