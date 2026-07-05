@@ -32,11 +32,20 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
           env:
+            - name: INFERENCE_MODE
+              value: "vllm"
+            - name: VLLM_URL
+              value: "http://vllm:8000"
             - name: HF_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: finlens-secrets
                   key: hf-token
+            - name: WANDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: finlens-secrets
+                  key: wandb-api-key
 ---
 apiVersion: v1
 kind: Service
