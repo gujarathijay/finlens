@@ -99,7 +99,10 @@ def score_extraction(predicted: dict, expected: dict) -> dict:
 
 
 def evaluate_predictions(predictions_path: str) -> None:
-    """Evaluate a predictions file. Each line: {"input_text", "expected_output", "predicted_output"}."""
+    """Evaluate a predictions file.
+
+    Each line: {"input_text", "expected_output", "predicted_output"}.
+    """
     path = Path(predictions_path)
     if not path.exists():
         console.print(f"[red]✗ Not found: {predictions_path}[/]")
@@ -118,7 +121,11 @@ def evaluate_predictions(predictions_path: str) -> None:
             expected = example.get("expected_output", {})
 
             # JSON parse check
-            parsed = parse_json_safe(predicted_text) if isinstance(predicted_text, str) else predicted_text
+            parsed = (
+                parse_json_safe(predicted_text)
+                if isinstance(predicted_text, str)
+                else predicted_text
+            )
             if parsed is None:
                 continue
             json_pass += 1
@@ -168,14 +175,14 @@ def evaluate_baseline(val_path: str) -> None:
 
 def _print_report(total: int, json_pass: int, schema_pass: int, all_scores: list[dict]) -> None:
     """Print evaluation report."""
-    console.print(f"\n[bold]Evaluation Report[/]\n")
+    console.print("\n[bold]Evaluation Report[/]\n")
 
     # Pass rates
     rates = Table(title="Pass Rates")
     rates.add_column("Metric", style="cyan")
     rates.add_column("Score", style="green")
-    rates.add_row("JSON parse rate", f"{json_pass}/{total} ({100*json_pass/total:.0f}%)")
-    rates.add_row("Schema compliance", f"{schema_pass}/{total} ({100*schema_pass/total:.0f}%)")
+    rates.add_row("JSON parse rate", f"{json_pass}/{total} ({100 * json_pass / total:.0f}%)")
+    rates.add_row("Schema compliance", f"{schema_pass}/{total} ({100 * schema_pass / total:.0f}%)")
     console.print(rates)
 
     if not all_scores:
@@ -187,12 +194,17 @@ def _print_report(total: int, json_pass: int, schema_pass: int, all_scores: list
     accuracy.add_column("Metric", style="cyan")
     accuracy.add_column("Score", style="green")
 
-    metrics = ["risk_category_recall", "severity_accuracy", "event_impact_accuracy", "extraction_completeness"]
+    metrics = [
+        "risk_category_recall",
+        "severity_accuracy",
+        "event_impact_accuracy",
+        "extraction_completeness",
+    ]
     for metric in metrics:
         values = [s[metric] for s in all_scores if metric in s]
         if values:
             avg = sum(values) / len(values)
-            accuracy.add_row(metric, f"{100*avg:.1f}%")
+            accuracy.add_row(metric, f"{100 * avg:.1f}%")
 
     console.print()
     console.print(accuracy)

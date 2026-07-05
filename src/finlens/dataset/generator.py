@@ -18,17 +18,26 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.progress import track
 
-load_dotenv()
-
 from src.finlens.schemas import ExtractionResult, get_extraction_schema
+
+load_dotenv()
 
 console = Console()
 
 # Diversity seeds — we cycle through these to get varied examples
 INDUSTRIES = [
-    "technology", "banking", "pharmaceuticals", "automotive",
-    "retail", "energy", "telecommunications", "healthcare",
-    "aerospace", "insurance", "real estate", "manufacturing",
+    "technology",
+    "banking",
+    "pharmaceuticals",
+    "automotive",
+    "retail",
+    "energy",
+    "telecommunications",
+    "healthcare",
+    "aerospace",
+    "insurance",
+    "real estate",
+    "manufacturing",
 ]
 
 SCENARIOS = [
@@ -64,7 +73,8 @@ STEP 2: Extract structured data from the passage matching this exact JSON schema
 
 IMPORTANT:
 - "evidence" fields should be short phrases from the passage
-- Use only these risk categories: regulatory, market, operational, financial, legal, cybersecurity, environmental, competitive
+- Use only these risk categories: regulatory, market, operational, financial, legal, cybersecurity,
+  environmental, competitive
 - Use only these severity values: high, medium, low
 - Use only these impact values: positive, negative, neutral
 - Dates should be YYYY-MM-DD or YYYY-MM format
@@ -154,7 +164,7 @@ def generate_dataset(count: int = 250, output_path: str = "data/dataset.jsonl") 
             f.write(json.dumps(example) + "\n")
 
     console.print(f"\n[bold green]Done![/] {len(examples)} examples → {output}")
-    console.print(f"Attempts: {attempts}, Success rate: {len(examples)/attempts:.0%}\n")
+    console.print(f"Attempts: {attempts}, Success rate: {len(examples) / attempts:.0%}\n")
 
 
 if __name__ == "__main__":

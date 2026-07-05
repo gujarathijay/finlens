@@ -1,12 +1,11 @@
 """Tests for guardrail checks."""
 
-import json
 from src.finlens.guardrails.checks import (
-    check_json_parse,
-    check_schema,
-    check_pii,
     check_completeness,
     check_input_length,
+    check_json_parse,
+    check_pii,
+    check_schema,
 )
 
 
@@ -17,7 +16,7 @@ def test_valid_json():
 
 
 def test_invalid_json():
-    passed, detail, parsed = check_json_parse('not json')
+    passed, detail, parsed = check_json_parse("not json")
     assert passed is False
     assert parsed is None
 
@@ -61,18 +60,22 @@ def test_input_ok():
 
 
 def test_completeness_empty():
-    passed, detail = check_completeness({"risk_factors": [], "material_events": [], "financial_obligations": []})
+    passed, detail = check_completeness(
+        {"risk_factors": [], "material_events": [], "financial_obligations": []}
+    )
     assert passed is False
 
 
 def test_completeness_ok():
-    passed, detail = check_completeness({
-        "company_name": "Test Corp",
-        "summary": "A test summary",
-        "risk_factors": [{"factor": "test"}],
-        "material_events": [],
-        "financial_obligations": [],
-    })
+    passed, detail = check_completeness(
+        {
+            "company_name": "Test Corp",
+            "summary": "A test summary",
+            "risk_factors": [{"factor": "test"}],
+            "material_events": [],
+            "financial_obligations": [],
+        }
+    )
     assert passed is True
 
 
@@ -81,7 +84,14 @@ def test_schema_valid():
         "company_name": "Test Corp",
         "filing_type": "10-K",
         "fiscal_year": "2024",
-        "risk_factors": [{"factor": "Risk", "category": "regulatory", "severity": "high", "evidence": "evidence text"}],
+        "risk_factors": [
+            {
+                "factor": "Risk",
+                "category": "regulatory",
+                "severity": "high",
+                "evidence": "evidence text",
+            }
+        ],
         "material_events": [],
         "financial_obligations": [],
         "summary": "Test summary",
@@ -95,7 +105,14 @@ def test_schema_invalid_enum():
         "company_name": "Test Corp",
         "filing_type": "10-K",
         "fiscal_year": "2024",
-        "risk_factors": [{"factor": "Risk", "category": "invalid_category", "severity": "high", "evidence": "text"}],
+        "risk_factors": [
+            {
+                "factor": "Risk",
+                "category": "invalid_category",
+                "severity": "high",
+                "evidence": "text",
+            }
+        ],
         "material_events": [],
         "financial_obligations": [],
         "summary": "Test summary",

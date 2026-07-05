@@ -12,8 +12,8 @@ from pydantic import ValidationError
 
 from src.finlens.schemas import ExtractionResult
 
-
 # ── Check 1: JSON Parse ──
+
 
 def check_json_parse(output_text: str) -> tuple[bool, str, dict | None]:
     """Can we parse the output as JSON?"""
@@ -33,6 +33,7 @@ def check_json_parse(output_text: str) -> tuple[bool, str, dict | None]:
 
 # ── Check 2: Schema Compliance ──
 
+
 def check_schema(parsed: dict) -> tuple[bool, str]:
     """Does the parsed JSON match our ExtractionResult schema?"""
     try:
@@ -44,6 +45,7 @@ def check_schema(parsed: dict) -> tuple[bool, str]:
 
 
 # ── Check 3: Hallucination Detection ──
+
 
 def check_hallucination(parsed: dict, source_text: str) -> tuple[bool, str]:
     """
@@ -58,7 +60,7 @@ def check_hallucination(parsed: dict, source_text: str) -> tuple[bool, str]:
         if evidence and len(evidence) > 10:
             # Check if key phrases from evidence appear in source
             words = evidence.lower().split()
-            key_phrases = [" ".join(words[j:j+3]) for j in range(0, len(words)-2)]
+            key_phrases = [" ".join(words[j : j + 3]) for j in range(0, len(words) - 2)]
             matches = sum(1 for phrase in key_phrases if phrase in source_lower)
             if key_phrases and matches / len(key_phrases) < 0.3:
                 flagged.append(f"risk_factors[{i}].evidence")
@@ -71,10 +73,11 @@ def check_hallucination(parsed: dict, source_text: str) -> tuple[bool, str]:
 # ── Check 4: PII Detection ──
 
 PII_PATTERNS = {
-    "email": r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
-    "phone": r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
-    "ssn": r'\b\d{3}-\d{2}-\d{4}\b',
+    "email": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+    "phone": r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b",
+    "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
 }
+
 
 def check_pii(output_text: str) -> tuple[bool, str]:
     """Detect PII patterns in model output."""
@@ -89,6 +92,7 @@ def check_pii(output_text: str) -> tuple[bool, str]:
 
 
 # ── Check 5: Completeness ──
+
 
 def check_completeness(parsed: dict) -> tuple[bool, str]:
     """Ensure the extraction isn't empty."""
@@ -107,6 +111,7 @@ def check_completeness(parsed: dict) -> tuple[bool, str]:
 
 
 # ── Check 6: Input Length ──
+
 
 def check_input_length(input_text: str, max_length: int = 8000) -> tuple[bool, str]:
     """Reject inputs that are too long or too short."""

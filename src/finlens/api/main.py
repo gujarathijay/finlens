@@ -13,14 +13,14 @@ Usage:
 import json
 import time
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
 from src.finlens.api.database import Extraction, async_session, init_db
 from src.finlens.api.models import ExtractionRequest, ExtractionResponse, HealthResponse
 from src.finlens.guardrails.pipeline import run_guardrails
-from fastapi.middleware.cors import CORSMiddleware
-from src.finlens.monitoring.metrics import track_request, metrics_app
+from src.finlens.monitoring.metrics import metrics_app, track_request
 from src.finlens.monitoring.tracing import tracer
 
 app = FastAPI(
@@ -40,12 +40,14 @@ app.mount("/metrics", metrics_app)
 
 # ── Startup ──
 
+
 @app.on_event("startup")
 async def startup():
     await init_db()
 
 
 # ── Mock inference (replaced with vLLM in Phase 10) ──
+
 
 async def mock_inference(filing_text: str) -> str:
     """
@@ -80,12 +82,16 @@ async def mock_inference(filing_text: str) -> str:
                 "category": "debt",
             }
         ],
-        "summary": "Mock Corp faces regulatory risks while completing strategic acquisitions funded by long-term debt.",
+        "summary": (
+            "Mock Corp faces regulatory risks while completing strategic"
+            " acquisitions funded by long-term debt."
+        ),
     }
     return json.dumps(mock_output)
 
 
 # ── Endpoints ──
+
 
 @app.post("/extract", response_model=ExtractionResponse)
 async def extract(request: ExtractionRequest):
@@ -135,7 +141,9 @@ async def extract(request: ExtractionRequest):
                 num_events=len(parsed.get("material_events", [])),
                 num_obligations=len(parsed.get("financial_obligations", [])),
                 guardrails_passed=guardrail_result.passed,
-                guardrail_failures=", ".join(guardrail_result.failures) if guardrail_result.failures else None,
+                guardrail_failures=", ".join(guardrail_result.failures)
+                if guardrail_result.failures
+                else None,
                 latency_ms=latency_ms,
                 status=status,
             )
@@ -156,7 +164,7 @@ async def extract(request: ExtractionRequest):
             latency_ms=round(latency_ms, 1),
             request_id=record.id,
         )
-    
+
 
 @app.get("/health", response_model=HealthResponse)
 async def health():

@@ -94,18 +94,18 @@ def validate_dataset(
 
     # Report
     total = len(valid) + len(invalid)
-    console.print(f"\n[bold]Dataset Validation Report[/]\n")
+    console.print("\n[bold]Dataset Validation Report[/]\n")
 
     stats = Table(title="Stats")
     stats.add_column("Metric", style="cyan")
     stats.add_column("Value", style="green")
     stats.add_row("Total examples", str(total))
-    stats.add_row("Valid", f"{len(valid)} ({len(valid)/total:.0%})")
-    stats.add_row("Invalid", f"{len(invalid)} ({len(invalid)/total:.0%})")
+    stats.add_row("Valid", f"{len(valid)} ({len(valid) / total:.0%})")
+    stats.add_row("Invalid", f"{len(invalid)} ({len(invalid) / total:.0%})")
     console.print(stats)
 
     if invalid:
-        console.print(f"\n[yellow]Invalid examples:[/]")
+        console.print("\n[yellow]Invalid examples:[/]")
         for line_num, error in invalid[:10]:  # show first 10
             console.print(f"  Line {line_num}: {error}")
         if len(invalid) > 10:
@@ -118,7 +118,9 @@ def validate_dataset(
     # Quality stats
     avg_risks = sum(len(e["expected_output"]["risk_factors"]) for e in valid) / len(valid)
     avg_events = sum(len(e["expected_output"]["material_events"]) for e in valid) / len(valid)
-    avg_obligations = sum(len(e["expected_output"]["financial_obligations"]) for e in valid) / len(valid)
+    avg_obligations = sum(len(e["expected_output"]["financial_obligations"]) for e in valid) / len(
+        valid
+    )
     avg_text_len = sum(len(e["input_text"]) for e in valid) / len(valid)
 
     quality = Table(title="Quality")
@@ -145,7 +147,7 @@ def validate_dataset(
             for example in data:
                 f.write(json.dumps(example) + "\n")
 
-    console.print(f"\n[bold green]Done![/]")
+    console.print("\n[bold green]Done![/]")
     console.print(f"  Train: {len(train)} examples → {train_path}")
     console.print(f"  Val:   {len(val)} examples → {val_path}\n")
 

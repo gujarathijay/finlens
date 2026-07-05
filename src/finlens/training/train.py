@@ -74,19 +74,19 @@ def main():
 
     # ── Load model in 4-bit (QLoRA) ──
     print("Loading model in 4-bit quantization...")
-    bnb_config = BitsAndBytesConfig( 
-    load_in_4bit=True, 
-    bnb_4bit_quant_type="nf4", 
-    bnb_4bit_compute_dtype=torch.bfloat16, # Changed to bfloat16
-    bnb_4bit_use_double_quant=True, 
-    ) 
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16,  # Changed to bfloat16
+        bnb_4bit_use_double_quant=True,
+    )
 
-    model = AutoModelForCausalLM.from_pretrained( 
-    args.model, 
-    quantization_config=bnb_config, 
-    device_map={"": 0}, 
-    torch_dtype=torch.bfloat16, # Changed to bfloat16
-    token=os.environ.get("HF_TOKEN"), 
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model,
+        quantization_config=bnb_config,
+        device_map={"": 0},
+        torch_dtype=torch.bfloat16,  # Changed to bfloat16
+        token=os.environ.get("HF_TOKEN"),
     )
     model = prepare_model_for_kbit_training(model)
 
@@ -106,7 +106,7 @@ def main():
 
     model = get_peft_model(model, lora_config)
     trainable, total = model.get_nb_trainable_parameters()
-    print(f"Trainable parameters: {trainable:,} / {total:,} ({100*trainable/total:.2f}%)")
+    print(f"Trainable parameters: {trainable:,} / {total:,} ({100 * trainable / total:.2f}%)")
 
     # ── Load datasets ──
     print("\nLoading datasets...")

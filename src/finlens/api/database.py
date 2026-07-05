@@ -11,7 +11,6 @@ from sqlalchemy import DateTime, Float, Integer, String, Text, func
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-
 # ── Database engine ──
 
 DATABASE_URL = "sqlite+aiosqlite:///finlens.db"
@@ -22,18 +21,18 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 # ── Models ──
 
+
 class Base(DeclarativeBase):
     pass
 
 
 class Extraction(Base):
     """One extraction request + result."""
+
     __tablename__ = "extractions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime, server_default=func.now()
-    )
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Input
     input_text: Mapped[str] = mapped_column(Text)

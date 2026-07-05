@@ -9,6 +9,7 @@ from src.finlens.schemas import ExtractionResult
 
 class ExtractionRequest(BaseModel):
     """What the user sends."""
+
     filing_text: str = Field(
         description="Raw SEC filing text to extract from",
         min_length=50,
@@ -18,6 +19,7 @@ class ExtractionRequest(BaseModel):
 
 class ExtractionResponse(BaseModel):
     """What we return."""
+
     status: str = Field(description="success, failed, or flagged")
     extraction: ExtractionResult | None = Field(default=None)
     guardrails_passed: bool = Field(default=True)
@@ -28,6 +30,7 @@ class ExtractionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str = "ok"
     model_loaded: bool = False
     database: str = "connected"

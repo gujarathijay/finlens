@@ -60,10 +60,12 @@ def format_chat_messages(filing_text: str, response_json: dict | None = None) ->
     ]
 
     if response_json is not None:
-        messages.append({
-            "role": "assistant",
-            "content": json.dumps(response_json, indent=2),
-        })
+        messages.append(
+            {
+                "role": "assistant",
+                "content": json.dumps(response_json, indent=2),
+            }
+        )
 
     return messages
 

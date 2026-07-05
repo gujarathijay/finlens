@@ -32,6 +32,7 @@ console = Console()
 @dataclass
 class GuardrailResult:
     """Result of running all guardrail checks."""
+
     passed: bool
     parsed_output: dict | None
     checks: list[dict] = field(default_factory=list)
