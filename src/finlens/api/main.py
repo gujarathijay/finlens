@@ -19,6 +19,8 @@ from sqlalchemy import select
 from src.finlens.api.database import Extraction, async_session, init_db
 from src.finlens.api.models import ExtractionRequest, ExtractionResponse, HealthResponse
 from src.finlens.guardrails.pipeline import run_guardrails
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(
     title="FinLens API",
@@ -26,6 +28,12 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ── Startup ──
 
