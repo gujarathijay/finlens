@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     )
 
     # Model
-    base_model_name: str = "meta-llama/Llama-3.1-8B-Instruct"
+    base_model_name: str = "google/gemma-2-9b-it"
     finetuned_model_path: str = str(MODELS_DIR / "finlens-lora")
     quantized_model_path: str = str(MODELS_DIR / "finlens-quantized")
 
